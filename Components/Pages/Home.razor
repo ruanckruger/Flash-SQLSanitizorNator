@@ -1,0 +1,126 @@
+﻿@page "/"
+@* @rendermode[] *@
+
+@inject ISnackbar snackbar
+@inject INaughtyWordService<NaughtyWordServiceApi> service
+@inject IDialogService DialogService
+
+<PageTitle>Home</PageTitle>
+<MudContainer Class="d-flex flex-column gap-4">
+
+    <MudPaper Class="pa-2">
+        <MudText Typo="Typo.h1">
+            Hello Flash Team
+        </MudText>
+
+        <MudTextField @bind-Value="inputStr" Label="Whatcha wanna type?" />
+        <MudButton OnClick="Sanitize">Sanitize</MudButton>
+        <MudSpacer />
+        <MudText Typo="Typo.h3">Sanitized String</MudText>
+        <MudText Typo="Typo.body1">@sanitizedStr</MudText>
+    </MudPaper>
+    <AuthorizeView>
+        <MudPaper Class="pa-2">
+            <MudText Typo="Typo.h2">
+                Manage Naughty Words
+            </MudText>
+            <div class="d-flex align-content-center">
+                <div class="flex-auto">
+                    <MudTextField @bind-Value="newNaughtyWord.Value" Label="Add word to naughty list" />
+                    <MudSlider T="uint" Class="flex-auto" Min="SeverityLimits.Min" Max="SeverityLimits.Max" @bind-Value="@newNaughtyWord.Severity">Severity @newNaughtyWord.Severity</MudSlider>
+                </div>
+
+                <MudIconButton Icon="@Icons.Material.Filled.Add" Color="Color.Info" OnClick="CreateWord" />
+            </div>
+            <MudPaper>
+                @foreach (var word in naughtyWordList)
+                {
+                    <MudTextField @bind-Value="@word.Value"></MudTextField>
+                    <MudNumericField Value="@word.Value"></MudNumericField>
+                    <MudIconButton Icon="@Icons.Material.Filled.Save" Color="Color.Info" OnClick="_ => UpdateWord(word)" />
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="_ => DeleteWord(word)" />
+                }
+            </MudPaper>
+        </MudPaper>
+    </AuthorizeView>
+</MudContainer>
+
+@code {
+    string inputStr = "";
+    string sanitizedStr = "";
+    NaughtyWord newNaughtyWord = new();
+    List<NaughtyWord> naughtyWordList = new();
+
+    protected async override Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await LoadNaughtyWords();
+        }
+    }
+
+    async Task LoadNaughtyWords()
+    {
+        naughtyWordList = await service.GetAll();
+        StateHasChanged();
+    }
+
+    async Task UpdateWord(NaughtyWord word)
+    {
+        if (string.IsNullOrWhiteSpace(word.Value))
+        {
+            snackbar.Add("Word cannot be empty", Severity.Error);
+            return;
+        }
+
+        await service.Update(word);
+    }
+
+    async Task CreateWord()
+    {
+        if (string.IsNullOrWhiteSpace(newNaughtyWord.Value))
+        {
+            snackbar.Add("Word cannot be empty", Severity.Error);
+            return;
+        }
+
+        await service.Create(newNaughtyWord);
+        newNaughtyWord = new();
+        await LoadNaughtyWords();
+    }
+
+    async Task DeleteWord(NaughtyWord word)
+    {
+        try
+        {
+            bool? result = await DialogService.ShowMessageBox(
+            "Warning",
+            "Deleting can not be undone!",
+            yesText: "Delete!", cancelText: "Cancel");
+            if (result != null)
+            {
+                await service.Delete(word);
+                naughtyWordList.Remove(word);
+                snackbar.Add("Word deleted successfully", Severity.Success);
+                await LoadNaughtyWords();
+            }
+        }
+        catch
+        {
+            snackbar.Add("Error deleting word", Severity.Error);
+        }
+    }
+
+    async Task Sanitize()
+    {
+        try
+        {
+            var result = await service.Sanitize(inputStr);
+            inputStr = result;
+        }
+        catch
+        {
+            snackbar.Add("Error sanitizing input", Severity.Error);
+        }
+    }
+}

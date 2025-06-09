@@ -1,0 +1,23 @@
+﻿@inject NavigationManager NavigationManager
+
+<MudNavMenu>
+    <MudNavLink Href="/" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Home">Home</MudNavLink>
+
+    <AuthorizeView>
+        <Authorized>
+            <MudSpacer />
+            <MudNavLink Href="Account/Manage" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.AccountCircle">
+                @context?.User?.Identity?.Name
+            </MudNavLink>
+            <MudNavLink Href="Account/Logout" Icon="@Icons.Material.Filled.Logout">
+                Logout
+            </MudNavLink>
+        </Authorized>
+        <NotAuthorized>
+            <MudNavLink Href="/Account/Login" Icon="@Icons.Material.Filled.Logout">
+                Login
+            </MudNavLink>
+        </NotAuthorized>
+    </AuthorizeView>
+</MudNavMenu>
+
