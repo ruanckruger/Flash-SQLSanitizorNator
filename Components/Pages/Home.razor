@@ -20,35 +20,37 @@
         <MudText Typo="Typo.body1">@sanitizedStr</MudText>
     </MudPaper>
     <AuthorizeView>
-        <MudPaper Class="pa-2">
-            <MudText Typo="Typo.h2">
-                Manage Naughty Words
-            </MudText>
-            @if (!loading)
-            {
-                <div class="d-flex align-content-center">
-                    <div class="flex-auto">
-                        <MudTextField @bind-Value="newNaughtyWord.Value" Label="Add word to naughty list" />
-                        <MudSlider T="uint" @bind-Value="@newNaughtyWord.Severity"
-                                   Min="SeverityLimits.Min" Max="SeverityLimits.Max"
-                                   Step="1"
-                                   Class="flex-auto" Variant="Variant.Filled">Severity @newNaughtyWord.Severity.ToString()</MudSlider>
+        <Authorized>
+            <MudPaper Class="pa-2">
+                <MudText Typo="Typo.h2">
+                    Manage Naughty Words
+                </MudText>
+                @if (!loading)
+                {
+                    <div class="d-flex align-content-center">
+                        <div class="flex-auto">
+                            <MudTextField @bind-Value="newNaughtyWord.Value" Label="Add word to naughty list" />
+                            <MudSlider T="uint" @bind-Value="@newNaughtyWord.Severity"
+                                       Min="SeverityLimits.Min" Max="SeverityLimits.Max"
+                                       Step="1"
+                                       Class="flex-auto" Variant="Variant.Filled">Severity @newNaughtyWord.Severity.ToString()</MudSlider>
+                        </div>
+
+                        <MudIconButton Icon="@Icons.Material.Filled.Add" Color="Color.Info" OnClick="CreateWord" />
                     </div>
+                    <MudPaper>
+                        @foreach (var word in naughtyWordList)
+                        {
+                            <MudTextField @bind-Value="@word.Value"></MudTextField>
+                            <MudNumericField Value="@word.Value"></MudNumericField>
+                            <MudIconButton Icon="@Icons.Material.Filled.Save" Color="Color.Info" OnClick="_ => UpdateWord(word)" />
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="_ => DeleteWord(word)" />
+                        }
+                    </MudPaper>
+                }
 
-                    <MudIconButton Icon="@Icons.Material.Filled.Add" Color="Color.Info" OnClick="CreateWord" />
-                </div>
-                <MudPaper>
-                    @foreach (var word in naughtyWordList)
-                    {
-                        <MudTextField @bind-Value="@word.Value"></MudTextField>
-                        <MudNumericField Value="@word.Value"></MudNumericField>
-                        <MudIconButton Icon="@Icons.Material.Filled.Save" Color="Color.Info" OnClick="_ => UpdateWord(word)" />
-                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="_ => DeleteWord(word)" />
-                    }
-                </MudPaper>
-            }
-
-        </MudPaper>
+            </MudPaper>
+        </Authorized>
     </AuthorizeView>
 </MudContainer>
 
@@ -69,11 +71,21 @@
 
     async Task LoadNaughtyWords()
     {
-        loading = true;
-        naughtyWordList = await service.GetAll();
-        this.StateHasChanged();
-        loading = false;
-        this.StateHasChanged();
+        try
+        {
+            loading = true;
+            this.StateHasChanged();
+            naughtyWordList = await service.GetAll();
+        }
+        catch
+        {
+            snackbar.Add("Something went wrong while fetching words", Severity.Error);
+        }
+        finally
+        {
+            loading = false;
+            this.StateHasChanged();
+        }
     }
 
     async Task UpdateWord(NaughtyWord word)

@@ -40,46 +40,70 @@ namespace SQLSanitizorNator.Logic.Services
             }
             throw new HttpRequestException("Failed to Sanitize NaughtyWords.");
         }
+
+        public async Task<NaughtyWord?> GetById(Guid id, CancellationToken token = default)
+        {
+            var result = await _client.GetAsync($"./{id}", token);
+
+            if (result.IsSuccessStatusCode)
+            {
+                var toReturn = await result.Content.ReadAsStringAsync(token);
+                return new();
+            }
+            throw new HttpRequestException("Failed to Create Naughty Word.");
+        }
         public async Task<List<NaughtyWord>> GetAll(CancellationToken token = default)
         {
-            var result = await _client.GetAsync($"/", token);
+           var result = await _client.GetAsync($"./", token);
 
             if (result.IsSuccessStatusCode)
             {
-                return await result.Content.ReadFromJsonAsync<List<NaughtyWord>>(token) ?? new();
+                var toReturn = await result.Content.ReadAsStringAsync(token);
+                return new();
             }
             throw new HttpRequestException("Failed to Create Naughty Word.");
         }
 
-        public async Task<string> Create(NaughtyWord word, CancellationToken token = default)
+        public async Task<NaughtyWord?> Create(NaughtyWord word, CancellationToken token = default)
         {
-            var result = await _client.PostAsJsonAsync($"/", word, token);
+            var result = await _client.PostAsJsonAsync($"./", word, token);
 
             if (result.IsSuccessStatusCode)
             {
-                return await result.Content.ReadAsStringAsync(token);
+                return await result.Content.ReadFromJsonAsync<NaughtyWord>(token);
             }
             throw new HttpRequestException("Failed to Create Naughty Word.");
         }
 
-        public async Task<string> Update(NaughtyWord word, CancellationToken token = default)
+        public async Task<NaughtyWord?> Update(NaughtyWord word, CancellationToken token = default)
         {
-            var result = await _client.PutAsJsonAsync($"/", word, token);
+            var result = await _client.PutAsJsonAsync($"./", word, token);
 
             if (result.IsSuccessStatusCode)
             {
-                return await result.Content.ReadAsStringAsync(token);
+                return await result.Content.ReadFromJsonAsync<NaughtyWord>(token);
             }
             throw new HttpRequestException("Failed to Update Naughty Word.");
         }
 
-        public async Task<string> Delete(NaughtyWord word, CancellationToken token = default)
+        public async Task<NaughtyWord?> Delete(NaughtyWord word, CancellationToken token = default)
         {
-            var result = await _client.DeleteAsync($"/{word.Id}", token);
+            var result = await _client.DeleteAsync($"./{word.Id}", token);
 
             if (result.IsSuccessStatusCode)
             {
-                return await result.Content.ReadAsStringAsync(token);
+                return await result.Content.ReadFromJsonAsync<NaughtyWord>(token);
+            }
+            throw new HttpRequestException("Failed to Delete Naughty Word.");
+        }
+
+        public async Task<NaughtyWord?> DeleteById(Guid id, CancellationToken token = default)
+        {
+            var result = await _client.DeleteAsync($"./{id}", token);
+
+            if (result.IsSuccessStatusCode)
+            {
+                return await result.Content.ReadFromJsonAsync<NaughtyWord>(token);
             }
             throw new HttpRequestException("Failed to Delete Naughty Word.");
         }

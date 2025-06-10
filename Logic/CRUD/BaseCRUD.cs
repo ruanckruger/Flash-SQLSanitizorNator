@@ -7,12 +7,12 @@ namespace SQLSanitizorNator.Logic.CRUD;
 
 public interface IBaseCRUD<T, TKey> where T : EntityBase<TKey> where TKey : IEquatable<TKey>
 {
-    virtual Task<List<T>> GetAll(CancellationToken token = default) => throw new NotImplementedException();
-    virtual Task<T?> GetById(TKey id, CancellationToken token = default) => throw new NotImplementedException();
-    virtual Task<T> Create(T entity, CancellationToken token = default) => throw new NotImplementedException();
-    virtual Task<T> Update(T entity, CancellationToken token = default) => throw new NotImplementedException();
-    virtual Task<T> Delete(T entity, CancellationToken token = default) => throw new NotImplementedException();
-    virtual Task<T> DeleteById(TKey id, CancellationToken token = default) => throw new NotImplementedException();
+    Task<List<T>> GetAll(CancellationToken token = default);
+    Task<T?> GetById(TKey id, CancellationToken token = default);
+    Task<T> Create(T entity, CancellationToken token = default);
+    Task<T> Update(T entity, CancellationToken token = default);
+    Task<T> Delete(T entity, CancellationToken token = default);
+    Task<T> DeleteById(TKey id, CancellationToken token = default);
 }
 
 public class BaseCrud<T, TKey> : IBaseCRUD<T, TKey> where T : EntityBase<TKey> where TKey : IEquatable<TKey>
@@ -23,19 +23,19 @@ public class BaseCrud<T, TKey> : IBaseCRUD<T, TKey> where T : EntityBase<TKey> w
         _dbContextFactory = dbContextFactory ?? throw new ArgumentNullException(nameof(dbContextFactory));
     }
 
-    public virtual async Task<ICollection<T>> GetAll(CancellationToken token = default)
+    public async Task<List<T>> GetAll(CancellationToken token = default)
     {
         using var context = _dbContextFactory.CreateDbContext();
         return await context.Set<T>().ToListAsync(token);
     }
 
-    public virtual async Task<T?> GetById(TKey id, CancellationToken token = default)
+    public async Task<T?> GetById(TKey id, CancellationToken token = default)
     {
         using var context = _dbContextFactory.CreateDbContext();
         return await context.Set<T>().FindAsync(id, token);
     }
 
-    public virtual async Task<T> Create(T entity, CancellationToken token = default)
+    public async Task<T> Create(T entity, CancellationToken token = default)
     {
         using var context = _dbContextFactory.CreateDbContext();
         if (await context.Set<T>().AnyAsync(e => e.Id.Equals(entity.Id), token))
@@ -45,7 +45,8 @@ public class BaseCrud<T, TKey> : IBaseCRUD<T, TKey> where T : EntityBase<TKey> w
         await context.SaveChangesAsync(token);
         return newEntity.Entity;
     }
-    public virtual async Task<T> Update(T entity, CancellationToken token = default)
+
+    public async Task<T> Update(T entity, CancellationToken token = default)
     {
         using var context = _dbContextFactory.CreateDbContext();
         var updatedEntity = context.Set<T>().Update(entity);
@@ -53,7 +54,7 @@ public class BaseCrud<T, TKey> : IBaseCRUD<T, TKey> where T : EntityBase<TKey> w
         return updatedEntity.Entity;
     }
 
-    public virtual async Task<T> Delete(T entity, CancellationToken token = default)
+    public async Task<T> Delete(T entity, CancellationToken token = default)
     {
         using var context = _dbContextFactory.CreateDbContext();
         var deleted = context.Set<T>().Remove(entity);
@@ -61,11 +62,10 @@ public class BaseCrud<T, TKey> : IBaseCRUD<T, TKey> where T : EntityBase<TKey> w
         return deleted.Entity;
     }
 
-    public virtual async Task<T> DeleteById(TKey id, CancellationToken token = default)
+    public async Task<T> DeleteById(TKey id, CancellationToken token = default)
     {
         using var context = _dbContextFactory.CreateDbContext();
         var entity = await context.Set<T>().FindAsync(id, token) ?? throw new KeyNotFoundException("Entity with specified Id not found");
-        //if (entity is null) return null;
 
         var deleted = context.Set<T>().Remove(entity);
         await context.SaveChangesAsync(token);
